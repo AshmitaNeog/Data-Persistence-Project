@@ -18,7 +18,26 @@ public class MainManager : MonoBehaviour
     
     private bool m_GameOver = false;
 
-    
+    public static MainManager Instance;
+
+    public string playerName;
+    public int highScore;
+
+    private void Awake()
+    {
+        if (Instance != null)
+        {
+            Destroy(gameObject);
+            return;
+        }
+
+        Instance = this;
+        DontDestroyOnLoad(gameObject);
+
+        LoadData();
+    }
+
+
     // Start is called before the first frame update
     void Start()
     {
@@ -65,12 +84,49 @@ public class MainManager : MonoBehaviour
     void AddPoint(int point)
     {
         m_Points += point;
-        ScoreText.text = $"Score : {m_Points}";
+        ScoreText.text = "Player: " + playerName + " Score: " + m_Points;
     }
 
     public void GameOver()
     {
         m_GameOver = true;
         GameOverText.SetActive(true);
+
+        if (m_Points > highScore)
+        {
+            highScore = m_Points;
+            SaveData();
+        }
+    }
+
+    [System.Serializable]
+    class SaveData
+    {
+        public string playerName;
+        public int highScore;
+    }
+
+    public void SaveData()
+    {
+        SaveData data = new SaveData();
+        data.playerName = playerName;
+        data.highScore = highScore;
+
+        string json = JsonUtility.ToJson(data);
+        System.IO.File.WriteAllText(Application.persistentDataPath + "/savefile.json", json);
+    }
+
+    public void LoadData()
+    {
+        string path = Application.persistentDataPath + "/savefile.json";
+
+        if (System.IO.File.Exists(path))
+        {
+            string json = System.IO.File.ReadAllText(path);
+            SaveData data = JsonUtility.FromJson<SaveData>(json);
+
+            playerName = data.playerName;
+            highScore = data.highScore;
+        }
     }
 }
